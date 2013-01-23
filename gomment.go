@@ -23,8 +23,22 @@ type errorType struct {
 
 func main() {
 	flag.Parse()
-	gofile := flag.Args()[0]
-    tmpFile := path.Join(os.TempDir(), "gomment-tmp.go")
+    var in int
+    var o intt
+	gofile := path.Join(os.TempDir(), "gomment-gofile.go")
+	tmpFile := path.Join(os.TempDir(), "gomment-tmp.go")
+
+	stdIn := bufio.NewReader(os.Stdin)
+	var goFileOut *os.File
+	goFileOut, err := os.Create(gofile)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var line string
+	for line, err = stdIn.ReadString('\n'); err == nil; line, err = stdIn.ReadString('\n') {
+		goFileOut.WriteString(line)
+	}
 
 	errors := goBuild(gofile)
 	ret, err := goFix(gofile, errors, []string{"import", "noNewVariable"})
@@ -45,8 +59,8 @@ func main() {
 		fmt.Print(line)
 	}
 
-    os.Remove(tmpFile)
-    os.Remove(path.Join(os.TempDir(), "gomment-tmp"))
+	//    os.Remove(tmpFile)
+	//   os.Remove(path.Join(os.TempDir(), "gomment-tmp"))
 
 }
 
@@ -103,7 +117,7 @@ func goCommentLines(in string, lines map[int]errorType) (ret []string, err error
 	defer file.Close()
 
 	binf := bufio.NewReader(file)
-    alreadyCommented := regexp.MustCompile(`//(commented out unused .*)|(replaed := with =)$`)
+	alreadyCommented := regexp.MustCompile(`//(commented out unused .*)|(replaed := with =)$`)
 	lineno := 0
 	var line string
 
@@ -111,41 +125,41 @@ func goCommentLines(in string, lines map[int]errorType) (ret []string, err error
 		lineno++
 		if errTyp, ok := lines[lineno]; ok {
 			line = strings.TrimRight(line, "\n")
-            reSimpleDec1 := `(\s*var\s*` + errTyp.VarName + `\s*\w+)`
-            reSimpleDec2 := `(\s*` + errTyp.VarName + `\s*:=.*)`
+			reSimpleDec1 := `(\s*var\s*` + errTyp.VarName + `\s*\w+)`
+			reSimpleDec2 := `(\s*` + errTyp.VarName + `\s*:=.*)`
 			reSimpleVarDec := regexp.MustCompile(reSimpleDec1 + "|" + reSimpleDec2)
 
-            switch errTyp.ErrType{
-            case "import":
+			switch errTyp.ErrType {
+			case "import":
 				line = "// " + line
-				if !alreadyCommented.MatchString(line) && *comment{
+				if !alreadyCommented.MatchString(line) && *comment {
 					line += " //commented out unused import"
 				}
 
-            case "noNewVariable":
-                isRegex := regexp.MustCompile(":=")
-                line = isRegex.ReplaceAllString(line, "=")
-                if ! alreadyCommented.MatchString(line) && *comment {
-                    line += " //replaced := with ="
-                }
-            case "unusedVariable":
-                if reSimpleVarDec.MatchString(line) {
-                    line = "// " + line
-                    if !alreadyCommented.MatchString(line) && *comment {
-                        line += " //commented unused variable"
-                    }
-                    break
-                }
+			case "noNewVariable":
+				isRegex := regexp.MustCompile(":=")
+				line = isRegex.ReplaceAllString(line, "=")
+				if !alreadyCommented.MatchString(line) && *comment {
+					line += " //replaced := with ="
+				}
+			case "unusedVariable":
+				if reSimpleVarDec.MatchString(line) {
+					line = "// " + line
+					if !alreadyCommented.MatchString(line) && *comment {
+						line += " //commented unused variable"
+					}
+					break
+				}
 
-                varRegex := regexp.MustCompile(`\b` + errTyp.VarName + `\b`)
-                line = varRegex.ReplaceAllString(line, "_")
-                if !alreadyCommented.MatchString(line) && *comment {
-                    line += " //commented unused variable " + errTyp.VarName
-                }
-            }
+				varRegex := regexp.MustCompile(`\b` + errTyp.VarName + `\b`)
+				line = varRegex.ReplaceAllString(line, "_")
+				if !alreadyCommented.MatchString(line) && *comment {
+					line += " //commented unused variable " + errTyp.VarName
+				}
+			}
 			line += "\n"
-        }
-        ret = append(ret, line)
+		}
+		ret = append(ret, line)
 	}
 	if err == io.EOF {
 		return ret, nil
@@ -154,7 +168,7 @@ func goCommentLines(in string, lines map[int]errorType) (ret []string, err error
 }
 
 func goBuild(gofile string) string {
-    os.Chdir(path.Dir(gofile))
+	os.Chdir(path.Dir(gofile))
 	args := append([]string{"build"}, gofile)
 	build := exec.Command("go", args...)
 	stdout, err := build.Output()
