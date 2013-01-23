@@ -1,6 +1,17 @@
-# Gomment
+# Gomment *(as in Go comment)*
 
 A streamfilter to comment out some common errors when writing *Go* code.
+
+It basicly adresses all the little annoyances expressed by Aldo Cortesi in his
+[blog post](http://corte.si/posts/code/go/go-rant.html).
+You use it like `gofmt` to format your code, so it takes stdin and spits out 
+cleaned on stdout. 
+
+You could integrate it in your editor, I use vim and already had `gofmt` hooked up to clean
+up my code with 1 keystroke. Now it first runs through `gomment` and then through `gofmt`.
+You could even hook it up to `:w`, to save that last keystroke but thats a personal taste.
+
+## What it does
 
 - unused variables
   - simple var declaration, the whole line gets commented out
